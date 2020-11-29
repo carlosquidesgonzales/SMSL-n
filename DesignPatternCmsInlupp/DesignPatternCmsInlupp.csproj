@@ -14,7 +14,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>DesignPatternCmsInlupp</RootNamespace>
     <AssemblyName>DesignPatternCmsInlupp</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <MvcBuildViews>false</MvcBuildViews>
     <UseIISExpress>true</UseIISExpress>
     <Use64BitIISExpress />
@@ -134,10 +134,16 @@
     <Compile Include="Models\CallInstructions.cs" />
     <Compile Include="Models\Customer.cs" />
     <Compile Include="Models\Invoice.cs" />
+    <Compile Include="Repositories\IRepository.cs" />
     <Compile Include="Models\Loan.cs" />
     <Compile Include="Models\Parametrar.cs" />
     <Compile Include="Models\Payment.cs" />
+    <Compile Include="Repositories\Repository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\CachedRiksBankensBaseRate.cs" />
+    <Compile Include="Services\CustomerTransaction.cs" />
+    <Compile Include="FinansInspektionsRapportering\FinansInspektionsRapporteringBuilder.cs" />
+    <Compile Include="Services\IGetRiksBankensBaseRate.cs" />
     <Compile Include="Services\InterestService.cs" />
     <Compile Include="Services\Logger.cs" />
     <Compile Include="Services\Mailer.cs" />

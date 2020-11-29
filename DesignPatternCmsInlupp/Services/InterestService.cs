@@ -5,9 +5,10 @@ using System.Web;
 
 namespace DesignPatternCmsInlupp.Services
 {
-    public class InterestService
+    public class InterestService: IGetRiksBankensBaseRate
     {
-        public static decimal GetRiksbankensBaseRate()
+        //public static decimal GetRiksbankensBaseRate()
+        public decimal GetRiksbankensBaseRate()
         {
             //Fake slow call
             System.Threading.Thread.Sleep(5000);

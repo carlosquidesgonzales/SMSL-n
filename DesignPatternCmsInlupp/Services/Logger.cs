@@ -16,6 +16,9 @@ namespace DesignPatternCmsInlupp.Services
             CreatingLoan
 
         };
+        private Logger(){}
+        private static Lazy<Logger> instance = new Lazy<Logger>(()=> new Logger());
+        public static Logger Instance => instance.Value;
         public void LogAction(Actions action, string message)
         {
             System.IO.File.AppendAllText(HttpContext.Current.Server.MapPath("~/log.txt"),  $"{action.ToString()} - {DateTime.Now.ToString("yyyy-MM-dd HH:mm:SS")}  {message}\n");
