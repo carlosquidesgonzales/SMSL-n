@@ -2,12 +2,37 @@
 
 Här är en beskrivning av de patterns jag använt och var:
 
-1
+1 Repository med inplementation av ett interface IRepository för att göra koden testbar, 
+  kunna använda dependency injection, all data transaktioner ligger i en Class. 
+  Repository classen finns i mapen reposirories och jag har använt det i HomeController class.
 
 
-2
+2 Singleton för att skapa endast en instance så att man kan peka ut till ett objekt som globalt. 
+  Man brukar använda det för loggningen. Det har använt för att undvika koden att krascha när det händer flera saker samtidigt.
+  Mönstret finns i Logger class i mapen services. 
+  Jag har använt det i metoden SendLoggFile i HomeController.
 
 
-3
+3 Cache Decorator för att hämta och cacha data så att man inte hämtar data varje gång när det behövs.
+  Det har använts för att hämta riksbankensbase rate en gång per dagen. 
+  Det finns i metoden Parameter HomeController. Pattern äer i class CachedRiksBankensBaseRat.
 
-etc etc
+
+4 Lazy loading för att försena lastningen av datat tills man behöver det. 
+  I det här fallet så har jag advänt det för att läsa Invoices, Loans och Payments för bättre prestanda. 
+  Det har använts i metoder SetInvoicesForCustomer, SetLoansForCustomer, SetPaymentsForCustomer i Repository Class. 
+  Mönstret finns i CustomerTransaction class.
+
+
+5 Fluent Builder skapar ett objekt i taget och koppla tillsammans så att man inte hamnar i en stor komplicerad konstruktor.
+  Har använt i Send metod i Report class. 
+  Mönstret finns i classen RapportBuilder med hjälp av RapportElement class. 
+
+
+6 Dependency injection för att minska det täta kopplingen mellan komponenterna så att dem inte beroende av varandra. 
+ Det blir enklare för framtida kodändringar i projektet. Jag har använt UnityContainer i HomeControllers konstruktorn. 
+ Mönstret finns i UnityConfig class i App_Start mappen. 
+
+ 7 Observer för att få något information om det händer något. Använt i ActionResult NewLoan. Mönstren finns i mappen Observers.
+
+

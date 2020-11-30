@@ -11,7 +11,7 @@ namespace DesignPatternCmsInlupp.Services
         public decimal GetRiksbankensBaseRate()
         {
             //Fake slow call
-            System.Threading.Thread.Sleep(5000);
+           // System.Threading.Thread.Sleep(5000);
             using (var c = new SweaWebService.SweaWebServicePortTypeClient())
             {
                 //var groups = c.getInterestAndExchangeGroupNames(SweaWebService.LanguageType.sv).ToList();

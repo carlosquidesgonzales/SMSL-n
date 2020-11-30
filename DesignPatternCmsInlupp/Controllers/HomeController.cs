@@ -1,5 +1,6 @@
 ﻿using DesignPatternCmsInlupp.FinansInspektionsRapportering;
 using DesignPatternCmsInlupp.Models;
+using DesignPatternCmsInlupp.Observers;
 using DesignPatternCmsInlupp.Repositories;
 using DesignPatternCmsInlupp.Services;
 using System;
@@ -14,11 +15,11 @@ namespace DesignPatternCmsInlupp.Controllers
     public class HomeController : Controller
     {
         private readonly IRepository _repository;
-        private readonly IGetRiksBankensBaseRate _riksBankensBaseRate;
-        public HomeController()
+        private IGetRiksBankensBaseRate _riksBankensBaseRate;
+        public HomeController(IRepository repository)
         {
-            _repository = new Repository();
-            _riksBankensBaseRate = new CachedRiksBankensBaseRate(new InterestService());
+            _repository = repository; //Repository med dependency injection
+                                      // _riksBankensBaseRate = riksBankensBaseRate;        
         }
         public ActionResult Index()
         {
@@ -26,8 +27,10 @@ namespace DesignPatternCmsInlupp.Controllers
         }
         public ActionResult Parametrar()
         {
-            var logger = Logger.Instance;
-            logger.LogAction(Logger.Actions.ParametrarPage, "");
+            var loggFile = new LoggFile();
+            _riksBankensBaseRate = new CachedRiksBankensBaseRate(new InterestService()); // Cache Decorator
+            loggFile.SendLoggFile += SendLoggFile;
+            loggFile.CatchNewLoan(Logger.Actions.ParametrarPage, "");
 
             var model = new Parametrar();
             model.CurrentRiksbankenStibor = _riksBankensBaseRate.GetRiksbankensBaseRate();
@@ -42,31 +45,37 @@ namespace DesignPatternCmsInlupp.Controllers
         [HttpGet]
         public ActionResult Customer(string PersonNummer)
         {
-            var logger = Logger.Instance;
-            logger.LogAction(Logger.Actions.ViewCustomerPage, PersonNummer);
-
+            var loggFile = new LoggFile();
+            loggFile.SendLoggFile += SendLoggFile;
+            loggFile.CatchNewLoan(Logger.Actions.ViewCustomerPage, PersonNummer);
             var customer = _repository.FindCustomer(PersonNummer);
             return View(customer);
         }
         [HttpGet]
         public ActionResult Ringinstruktioner()
         {
-            var logger = Logger.Instance;
-            logger.LogAction(Logger.Actions.CallReceived, " some more useless info...");
+            var loggFile = new LoggFile();
+            loggFile.SendLoggFile += SendLoggFile;
+            loggFile.CatchNewLoan(Logger.Actions.CallReceived, " some more useless info...");
             var model = new CallInstructions();
             return View(model);
         }
         [HttpPost]
         public ActionResult NewLoan(CallInstructions model)
         {
-            var logger = Logger.Instance;
+            var mail = new Mail();
+            var reportNewLoan = new NewLoan();
+            var loggFile = new LoggFile();
             var c = _repository.FindCustomer(model.Personnummer);
             if (c == null)
             {
                 c = new Customer { PersonNummer = model.Personnummer };
                 _repository.SaveToFile(c);
-                logger.LogAction(Logger.Actions.CreatingCustomer, model.Personnummer);
-                SendEmailToBoss("New customer!", model.Personnummer);
+
+                mail.SendMail += SendEmailToBoss;
+                mail.CatchEmail("harry@hederligeharry.se", "New customer!", model.Personnummer);//Observer
+                loggFile.SendLoggFile += SendLoggFile;
+                loggFile.CatchNewLoan(Logger.Actions.CreatingCustomer, model.Personnummer);//Observer
             }
             var loan = new Loan
             {
@@ -77,43 +86,45 @@ namespace DesignPatternCmsInlupp.Controllers
             };
             c.Loans.Add(loan);
             _repository.SaveLoanToFile(c, loan);
-            SendEmailToBoss("New loan!", model.Personnummer + " " + loan.LoanNo);
-            ReportNewLoanToFinansInspektionen(model.Personnummer, loan);
-            logger.LogAction(Logger.Actions.CreatingLoan, $"{model.Personnummer} {loan.LoanNo}  {loan.Belopp}");
+
+            mail.SendMail += SendEmailToBoss;
+            mail.CatchEmail("harry@hederligeharry.se", "New loan!", model.Personnummer + " " + loan.LoanNo);//Observer
+            reportNewLoan.SendReportNewLoanToFinansInspektionen += ReportNewLoanToFinansInspektionen;
+            reportNewLoan.CatchNewLoan(model.Personnummer, loan);//Observer 
+            loggFile.SendLoggFile += SendLoggFile;
+            loggFile.CatchNewLoan(Logger.Actions.CreatingLoan, $"{model.Personnummer} {loan.LoanNo}  {loan.Belopp}");//Observer
             return View(loan);
         }
-        void SendEmailToBoss(string subject, string message)
+        private static void SendLoggFile(object sender, LoggFileEventargs eventargs)
+        {
+            var logger = Logger.Instance; //Singleton
+            logger.LogAction(Logger.Actions.CreatingLoan, eventargs.Message);
+        }
+        private static void SendEmailToBoss(object sender, MailEventargs eventargs)
         {
             var mailer = new Mailer();
-            mailer.SendMail("harry@hederligeharry.se", subject, message);
+            mailer.SendMail(eventargs.To, eventargs.Subject, eventargs.Message);
         }
-        void ReportNewLoanToFinansInspektionen(string personNummer, Loan loan)
+        void ReportNewLoanToFinansInspektionen(object sender, NewLoanEventArgs eventargs)
         {
-            //var report = new FinansInspektionsRapportering.Report(
-            //    FinansInspektionsRapportering.Report.ReportType.Loan,
-            //    personNummer, loan.LoanNo, 0, loan.Belopp, 0
-            //    );
-            var reports = new FinansInspektionsRapporteringBuilder()
-                .WithType(FinansInspektionsRapportering.Report.ReportType.Loan)
-                .WithPersonNummer(personNummer)
-                .WithLoanNumber(loan.LoanNo)
-                .WithAvgRta(0)
-                .WithLoanBelopp(loan.Belopp)
-                .WithLatePaymenyBelopp(0)
-                .Build();
-                
-            reports.Send();
+            var report = new Report(
+                Report.ReportType.Loan,
+                eventargs.PersonNummer, 
+                eventargs.Loan.LoanNo,
+                0,
+                eventargs.Loan.Belopp,
+                0);
+            report.Send();
         }
         [HttpPost]
         public ActionResult Ringinstruktioner(CallInstructions model)
         {
+            _riksBankensBaseRate = new CachedRiksBankensBaseRate(new InterestService());
             var c = _repository.FindCustomer(model.Personnummer);
             model.Result = true;
             if (c == null)
                 model.Customer = c;
             int age = GetAge(model.Personnummer);
-            
-            //decimal baseRate = InterestService.GetRiksbankensBaseRate();
             decimal baseRate = _riksBankensBaseRate.GetRiksbankensBaseRate();
             if (c == null)
             {

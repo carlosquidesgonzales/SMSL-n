@@ -13,18 +13,19 @@ namespace DesignPatternCmsInlupp.Models
         }
         public string PersonNummer { get; set; }
         public List<Loan> Loans { get; set; }
-
         public int Total()
         {
             return Loans.Sum(l => l.Belopp);
         }
-
-        public bool HasEverBeenLatePaying { get {
+        public bool HasEverBeenLatePaying
+        {
+            get
+            {
                 foreach (var loan in Loans)
                     foreach (var i in loan.Invoices)
                         if (i.LatePayment() > 0) return true;
                 return false;
-            } }
-
+            }
+        }
     }
 }

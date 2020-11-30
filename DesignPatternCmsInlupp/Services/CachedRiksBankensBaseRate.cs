@@ -16,7 +16,7 @@ namespace DesignPatternCmsInlupp.Services
         }
         public decimal GetRiksbankensBaseRate()
         {
-            if (lastDateTime == DateTime.MinValue || (DateTime.Now - lastDateTime).TotalMinutes > 60)
+            if (lastDateTime == DateTime.MinValue || (DateTime.Now - lastDateTime).TotalMinutes > 60 * 24)
             {
                 caschedRiksBankensBaseRate = _riksBankensBaseRate.GetRiksbankensBaseRate();
                 lastDateTime = DateTime.Now;

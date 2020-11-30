@@ -9,36 +9,33 @@ namespace DesignPatternCmsInlupp.Services
 {
     public class CustomerTransaction
     {
-        private readonly string _invoicesDatabas = HttpContext.Current.Server.MapPath("~/invoices.txt");
-        private readonly string _paymentsDatabas = HttpContext.Current.Server.MapPath("~/payments.txt");
-        private readonly string _loansDatabas = HttpContext.Current.Server.MapPath("~/loans.txt");
         public enum CustomerTransactions
         {          
             SetInvoice,
             SetPayment,
             SetLoan,
         };     
-        public CustomerTransaction(){}
+        private CustomerTransaction(){}
         private static Lazy<CustomerTransaction> instance = new Lazy<CustomerTransaction>(() => new CustomerTransaction());
         public static CustomerTransaction Instance => instance.Value;
-        public void SetCustomerTransactions(Customer customer, CustomerTransactions transaction)
+        public void SetCustomerTransactions(Customer customer, CustomerTransactions transaction, string path)
         {
             switch (transaction)
             {
                 case CustomerTransactions.SetInvoice:
-                    SetInvoicesForCustomer(customer);
+                    SetInvoicesForCustomer(customer, path);
                     break;
                 case CustomerTransactions.SetPayment:
-                    SetPaymentsForCustomer(customer);
+                    SetPaymentsForCustomer(customer, path);
                     break;
                 case CustomerTransactions.SetLoan:
-                    SetLoansForCustomer(customer);
+                    SetLoansForCustomer(customer, path);
                     break;
             }
         }
-        private void SetInvoicesForCustomer(Customer customer)
+        private void SetInvoicesForCustomer(Customer customer, string path)
         {
-            foreach (var line in System.IO.File.ReadAllLines(_invoicesDatabas))
+            foreach (var line in System.IO.File.ReadAllLines(path))
             {
                 string[] parts = line.Split(';');
                 if (parts.Length < 2) continue;
@@ -57,9 +54,9 @@ namespace DesignPatternCmsInlupp.Services
                 }
             }
         }
-        private void SetPaymentsForCustomer(Customer customer)
+        private void SetPaymentsForCustomer(Customer customer, string path)
         {
-            foreach (var line in System.IO.File.ReadAllLines(_paymentsDatabas))
+            foreach (var line in System.IO.File.ReadAllLines(path))
             {
                 string[] parts = line.Split(';');
                 if (parts.Length < 2) continue;
@@ -74,9 +71,9 @@ namespace DesignPatternCmsInlupp.Services
                 invoice.Payments.Add(payment);
             }
         }
-        private void SetLoansForCustomer(Customer customer)
+        private void SetLoansForCustomer(Customer customer, string path)
         {
-            foreach (var line in System.IO.File.ReadAllLines(_loansDatabas))
+            foreach (var line in System.IO.File.ReadAllLines(path))
             {
                 string[] parts = line.Split(';');
                 if (parts.Length < 2) continue;

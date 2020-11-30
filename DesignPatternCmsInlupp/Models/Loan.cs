@@ -15,7 +15,6 @@ namespace DesignPatternCmsInlupp.Models
         public int Belopp { get; set; }
         public DateTime FromWhen { get; set; }
         public decimal InterestRate { get; set; }
-
         public List<Invoice> Invoices { get; set; }
     }
 }
