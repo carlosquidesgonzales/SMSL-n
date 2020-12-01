@@ -33,6 +33,8 @@ Här är en beskrivning av de patterns jag använt och var:
  Det blir enklare för framtida kodändringar i projektet. Jag har använt UnityContainer i HomeControllers konstruktorn. 
  Mönstret finns i UnityConfig class i App_Start mappen. 
 
- 7 Observer för att få något information om det händer något. Använt i ActionResult NewLoan. Mönstren finns i mappen Observers.
+ 7 Observer för att få något information om det händer något. 
+   Det används om man behöver bli informerad när vissa saker händer och sedan vill man meddelas när de inträffades. 
+   Använt i ActionResult NewLoan. Mönstren finns i mappen Observers.
 
 
