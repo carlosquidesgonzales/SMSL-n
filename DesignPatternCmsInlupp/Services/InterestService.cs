@@ -5,13 +5,13 @@ using System.Web;
 
 namespace DesignPatternCmsInlupp.Services
 {
-    public class InterestService: IGetRiksBankensBaseRate
+    public class InterestService: IInterestService
     {
         //public static decimal GetRiksbankensBaseRate()
         public decimal GetRiksbankensBaseRate()
         {
             //Fake slow call
-           // System.Threading.Thread.Sleep(5000);
+           //System.Threading.Thread.Sleep(5000);
             using (var c = new SweaWebService.SweaWebServicePortTypeClient())
             {
                 //var groups = c.getInterestAndExchangeGroupNames(SweaWebService.LanguageType.sv).ToList();

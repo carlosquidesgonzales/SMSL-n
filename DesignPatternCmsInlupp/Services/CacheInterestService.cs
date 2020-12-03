@@ -5,20 +5,20 @@ using System.Web;
 
 namespace DesignPatternCmsInlupp.Services
 {
-    public class CachedRiksBankensBaseRate : IGetRiksBankensBaseRate
+    public class CacheInterestService : IInterestService
     {
-        private readonly IGetRiksBankensBaseRate _riksBankensBaseRate;
+        private readonly IInterestService _interestService;
         private static DateTime lastDateTime = DateTime.MinValue;
         private decimal caschedRiksBankensBaseRate;
-        public CachedRiksBankensBaseRate(IGetRiksBankensBaseRate riksBankensBaseRate)
+        public CacheInterestService(IInterestService interestService)
         {
-            _riksBankensBaseRate = riksBankensBaseRate;
+            _interestService = interestService;
         }
         public decimal GetRiksbankensBaseRate()
         {
             if (lastDateTime == DateTime.MinValue || (DateTime.Now - lastDateTime).TotalMinutes > 60 * 24)
             {
-                caschedRiksBankensBaseRate = _riksBankensBaseRate.GetRiksbankensBaseRate();
+                caschedRiksBankensBaseRate = _interestService.GetRiksbankensBaseRate();
                 lastDateTime = DateTime.Now;
             }
             return caschedRiksBankensBaseRate;

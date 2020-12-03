@@ -1,13 +1,11 @@
-﻿using DesignPatternCmsInlupp.Models;
-using DesignPatternCmsInlupp.Services;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 
-namespace DesignPatternCmsInlupp.Observers
+namespace DesignPatternCmsInlupp.Models
 {
-    public class MailEventargs
+    public class Mail : EventArgs
     {
         public string Email { get; set; }
         public string Message { get; set; }

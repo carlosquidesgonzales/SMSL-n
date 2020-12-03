@@ -7,7 +7,7 @@ using System.Web;
 
 namespace DesignPatternCmsInlupp.Observers
 {
-    public class NewLoanEventArgs
+    public class LoanEventArgs
     {
         public string PersonNummer;
         public Loan Loan;

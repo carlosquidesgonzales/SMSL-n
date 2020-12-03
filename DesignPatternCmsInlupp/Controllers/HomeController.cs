@@ -14,12 +14,16 @@ namespace DesignPatternCmsInlupp.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly IRepository _repository;
-        private IGetRiksBankensBaseRate _riksBankensBaseRate;
-        public HomeController(IRepository repository)
+       
+        private readonly ICustomerRepository _customerRepository;
+        private readonly ILoanRepository _loanRepository;
+        private readonly IInterestService _interestService;
+        public HomeController(ICustomerRepository repository)
         {
-            _repository = repository; //Repository med dependency injection
-                                      // _riksBankensBaseRate = riksBankensBaseRate;        
+            _customerRepository = repository; //dependency injection
+            _loanRepository = new LoanRepository();
+            _interestService = new CacheInterestService(new InterestService()); // Cache Decorator
+
         }
         public ActionResult Index()
         {
@@ -27,55 +31,47 @@ namespace DesignPatternCmsInlupp.Controllers
         }
         public ActionResult Parametrar()
         {
-            var loggFile = new LoggFile();
-            _riksBankensBaseRate = new CachedRiksBankensBaseRate(new InterestService()); // Cache Decorator
-            loggFile.SendLoggFile += SendLoggFile;
-            loggFile.CatchNewLoan(Logger.Actions.ParametrarPage, "");
+            var loggFile = new NewLogFile();
+
+            loggFile.OnLogFile += loggFile.LogAFile;
+            loggFile.CatchNewLgFile(Logger.Actions.ParametrarPage, "");
 
             var model = new Parametrar();
-            model.CurrentRiksbankenStibor = _riksBankensBaseRate.GetRiksbankensBaseRate();
+            model.CurrentRiksbankenStibor = _interestService.GetRiksbankensBaseRate();
             return View(model);
         }
         [HttpGet]
         public ActionResult ListCustomers()
         {
-            var model = _repository.GetCustomers().ToList();
+            var model = _customerRepository.GetCustomers().ToList();
             return View(model);
         }
         [HttpGet]
         public ActionResult Customer(string PersonNummer)
         {
-            var loggFile = new LoggFile();
-            loggFile.SendLoggFile += SendLoggFile;
-            loggFile.CatchNewLoan(Logger.Actions.ViewCustomerPage, PersonNummer);
-            var customer = _repository.FindCustomer(PersonNummer);
+            var loggFile = new NewLogFile();
+            loggFile.OnLogFile += loggFile.LogAFile;
+            loggFile.CatchNewLgFile(Logger.Actions.ViewCustomerPage, PersonNummer);
+            var customer = _customerRepository.FindCustomer(PersonNummer);
             return View(customer);
         }
         [HttpGet]
         public ActionResult Ringinstruktioner()
         {
-            var loggFile = new LoggFile();
-            loggFile.SendLoggFile += SendLoggFile;
-            loggFile.CatchNewLoan(Logger.Actions.CallReceived, " some more useless info...");
+            var loggFile = new NewLogFile();
+            loggFile.OnLogFile += loggFile.LogAFile;
+            loggFile.CatchNewLgFile(Logger.Actions.CallReceived, " some more useless info...");
             var model = new CallInstructions();
             return View(model);
         }
         [HttpPost]
         public ActionResult NewLoan(CallInstructions model)
         {
-            var mail = new Mail();
-            var reportNewLoan = new NewLoan();
-            var loggFile = new LoggFile();
-            var c = _repository.FindCustomer(model.Personnummer);
+            var c = _customerRepository.FindCustomer(model.Personnummer);
             if (c == null)
             {
                 c = new Customer { PersonNummer = model.Personnummer };
-                _repository.SaveToFile(c);
-
-                mail.SendMail += SendEmailToBoss;
-                mail.CatchEmail("harry@hederligeharry.se", "New customer!", model.Personnummer);//Observer
-                loggFile.SendLoggFile += SendLoggFile;
-                loggFile.CatchNewLoan(Logger.Actions.CreatingCustomer, model.Personnummer);//Observer
+                _customerRepository.SaveToFile(c);
             }
             var loan = new Loan
             {
@@ -85,47 +81,19 @@ namespace DesignPatternCmsInlupp.Controllers
                 InterestRate = model.RateWeCanOffer
             };
             c.Loans.Add(loan);
-            _repository.SaveLoanToFile(c, loan);
-
-            mail.SendMail += SendEmailToBoss;
-            mail.CatchEmail("harry@hederligeharry.se", "New loan!", model.Personnummer + " " + loan.LoanNo);//Observer
-            reportNewLoan.SendReportNewLoanToFinansInspektionen += ReportNewLoanToFinansInspektionen;
-            reportNewLoan.CatchNewLoan(model.Personnummer, loan);//Observer 
-            loggFile.SendLoggFile += SendLoggFile;
-            loggFile.CatchNewLoan(Logger.Actions.CreatingLoan, $"{model.Personnummer} {loan.LoanNo}  {loan.Belopp}");//Observer
+            _loanRepository.Save(c, loan);
             return View(loan);
-        }
-        private static void SendLoggFile(object sender, LoggFileEventargs eventargs)
-        {
-            var logger = Logger.Instance; //Singleton
-            logger.LogAction(Logger.Actions.CreatingLoan, eventargs.Message);
-        }
-        private static void SendEmailToBoss(object sender, MailEventargs eventargs)
-        {
-            var mailer = new Mailer();
-            mailer.SendMail(eventargs.To, eventargs.Subject, eventargs.Message);
-        }
-        void ReportNewLoanToFinansInspektionen(object sender, NewLoanEventArgs eventargs)
-        {
-            var report = new Report(
-                Report.ReportType.Loan,
-                eventargs.PersonNummer, 
-                eventargs.Loan.LoanNo,
-                0,
-                eventargs.Loan.Belopp,
-                0);
-            report.Send();
         }
         [HttpPost]
         public ActionResult Ringinstruktioner(CallInstructions model)
         {
-            _riksBankensBaseRate = new CachedRiksBankensBaseRate(new InterestService());
-            var c = _repository.FindCustomer(model.Personnummer);
+            var customer = new Customer();
+            var c = _customerRepository.FindCustomer(model.Personnummer);
             model.Result = true;
             if (c == null)
                 model.Customer = c;
-            int age = GetAge(model.Personnummer);
-            decimal baseRate = _riksBankensBaseRate.GetRiksbankensBaseRate();
+            int age = customer.GetAge(model.Personnummer);
+            decimal baseRate = _interestService.GetRiksbankensBaseRate();
             if (c == null)
             {
                 if (age < 18)
@@ -154,19 +122,6 @@ namespace DesignPatternCmsInlupp.Controllers
             }
             return View(model);
         }
-        int GetAge(string personnummer)
-        {
-            if (personnummer.Length == 10) //8101011234
-                return DateTime.Now.Year - 1900 - Convert.ToInt32(personnummer.Substring(0, 2));
-            if (personnummer.Length == 12 && !personnummer.Contains("-")) //198101011234
-                return DateTime.Now.Year - Convert.ToInt32(personnummer.Substring(0, 4));
-            if (personnummer.Length == 11) //810101-1234
-                return DateTime.Now.Year - 1900 - Convert.ToInt32(personnummer.Substring(0, 2));
-            if (personnummer.Length == 13) //19810101-1234
-                return DateTime.Now.Year - Convert.ToInt32(personnummer.Substring(0, 4));
-            //Fake if not correct
-            return 50;
-        }
         public ActionResult GenerateFakeData(int antal)
         {
             var rnd = new Random();
@@ -176,10 +131,10 @@ namespace DesignPatternCmsInlupp.Controllers
                     rnd.Next(1, 12).ToString("00") +
                     rnd.Next(1, 28).ToString("00") +
                     rnd.Next(1000, 9999);
-                var c = _repository.FindCustomer(persnr);
+                var c = _customerRepository.FindCustomer(persnr);
                 if (c != null) continue;
                 c = new Customer { PersonNummer = persnr };
-                _repository.SaveToFile(c);
+                _customerRepository.SaveToFile(c);
                 for (int l = 0; l <= rnd.Next(1, 7); l++)
                 {
                     var loan = new Loan
@@ -189,7 +144,7 @@ namespace DesignPatternCmsInlupp.Controllers
                         FromWhen = DateTime.Now.AddDays(-rnd.Next(10, 2000)),
                         InterestRate = Convert.ToDecimal(rnd.NextDouble() * (45 - 20) + 20)
                     };
-                    _repository.SaveLoanToFile(c, loan);
+                    _loanRepository.Save(c, loan);
                 }
             }
             return Content("Done");

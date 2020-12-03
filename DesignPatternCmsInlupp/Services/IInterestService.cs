@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DesignPatternCmsInlupp.Services
 {
-    public interface IGetRiksBankensBaseRate
+    public interface IInterestService
     {
         decimal GetRiksbankensBaseRate();
     }

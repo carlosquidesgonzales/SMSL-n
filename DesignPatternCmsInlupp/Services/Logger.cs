@@ -14,7 +14,6 @@ namespace DesignPatternCmsInlupp.Services
             ParametrarPage,
             CreatingCustomer,
             CreatingLoan
-
         };
         private Logger(){}
         private static Lazy<Logger> instance = new Lazy<Logger>(()=> new Logger());
